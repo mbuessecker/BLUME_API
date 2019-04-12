@@ -17,6 +17,7 @@ rp(baseUrl + '/lqi')
         urlsMeasuringPoints.forEach(measuringPointUrl => {
             getLatestMeasurements(baseUrl + measuringPointUrl)
         });
+        //getLatestMeasurements(baseUrl + urlsMeasuringPoints[0]);
     })
     .catch(function (err) {
         //handle error
@@ -25,25 +26,39 @@ rp(baseUrl + '/lqi')
 function getLatestMeasurements(measuringPointUrl) {
     rp(measuringPointUrl)
         .then((html) => {
-            // We need: latitude, longitude, (height), timestamp, measurements and measurementTypes 
+            // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
             const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
-
-            let timestamp = $(dateTableCell).children().first().text();
-            timestamp = new Date(timestamp).toLocaleString();
-
-            const measurementTypes = [];
+            
+            let measurementTypes = [];
             for (let i = 1; i < numberOfMeasurementsTypes; i++) {
                 const currentTableCell = $(measurementTypesTableRow[i]);
                 measurementTypes.push($(currentTableCell).children().first().text());
             }
-            console.log(timestamp);
-            console.log(measurementTypes);
 
-            return {
-                'timestamp': timestamp
+            let measurements = [];
+            $(dateTableCell).nextAll().each((i, element) => {
+                const measurementWithoutUnit = $(element).contents().not($(element).children()).text().trim();
+                measurements.push(measurementWithoutUnit);
+            });
+
+            let timestamp = $(dateTableCell).children().first().text();
+            timestamp = new Date(timestamp).toLocaleString();
+
+            const latestMeasurements = {
+                'timestamp': timestamp,
             }
+
+            measurementTypes.forEach((measurementType, i) => {
+                if(measurementType !== '') {
+                    latestMeasurements[measurementType] = measurements[i];
+                }
+            });
+
+            console.log(latestMeasurements);
+
+            return latestMeasurements;
         });
 }
