@@ -8,10 +8,11 @@ const API_KEY_GOOGLE = config['API_KEY_GOOGLE'];
 
 const baseUrl = 'https://luftdaten.berlin.de';
 
-function scrape() {
+async function scrape() {
     // First we have to get the URLs of the measuering points of BLUME.
-    rp(baseUrl + '/lqi')
-        .then(async (html) => {
+    return rp(baseUrl + '/lqi')
+        .then(async html => {
+            const data = [];
             const numberOfMeasuringPoints = $('a.lmn-button', html).length;
             const urlsMeasuringPoints = [];
 
@@ -20,19 +21,19 @@ function scrape() {
             }
 
             // Now we can get the measurements from the measuring points.
-            urlsMeasuringPoints.forEach(async measuringPointUrl => {
-                //await getLatestMeasurements(baseUrl + measuringPointUrl)
-            });
-            await getLatestMeasurements(baseUrl + urlsMeasuringPoints[0]);
+            await Promise.all(urlsMeasuringPoints.map(async measuringPointUrl => {
+                data.push(await getLatestMeasurements(baseUrl + measuringPointUrl));
+            }));
+            return data;
         })
-        .catch(function (err) {
-            //handle error
+        .catch((err) => {
+            console.log(err);
         });
 }
 
 async function getLatestMeasurements(measuringPointUrl) {
-    rp(measuringPointUrl)
-        .then(async (html) => {
+    return rp(measuringPointUrl)
+        .then(async html => {
             // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
             const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
@@ -69,6 +70,9 @@ async function getLatestMeasurements(measuringPointUrl) {
             });
 
             return latestMeasurements;
+        })
+        .catch((err) => {
+            console.log(err);
         });
 }
 
