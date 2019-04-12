@@ -32,13 +32,13 @@ function getLatestMeasurements(measuringPointUrl) {
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
             
-            let measurementTypes = [];
+            const measurementTypes = [];
             for (let i = 1; i < numberOfMeasurementsTypes; i++) {
                 const currentTableCell = $(measurementTypesTableRow[i]);
                 measurementTypes.push($(currentTableCell).children().first().text());
             }
 
-            let measurements = [];
+            const measurements = [];
             $(dateTableCell).nextAll().each((i, element) => {
                 const measurementWithoutUnit = $(element).contents().not($(element).children()).text().trim();
                 measurements.push(measurementWithoutUnit);
@@ -46,6 +46,9 @@ function getLatestMeasurements(measuringPointUrl) {
 
             let timestamp = $(dateTableCell).children().first().text();
             timestamp = new Date(timestamp).toLocaleString();
+
+            const address = $('dt:contains("Adresse:")', html).next().text();
+            const coordinates = getCoordinatesFromAddress(address);
 
             const latestMeasurements = {
                 'timestamp': timestamp,
@@ -57,8 +60,10 @@ function getLatestMeasurements(measuringPointUrl) {
                 }
             });
 
-            console.log(latestMeasurements);
-
             return latestMeasurements;
         });
+}
+
+function getCoordinatesFromAddress(address) {
+    // TODO
 }
