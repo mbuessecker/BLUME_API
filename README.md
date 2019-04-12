@@ -8,8 +8,13 @@ The data is only available on their website or as CSV-files. So in order to fetc
 The project is not done yet, but feel free to use it. 
 
 If you would like to run it on your own computer you need to have [Node.js and NPM](https://nodejs.org/en/) installed.
-Clone the project and install the necessary npm packages with the following command:
+Clone the project and install the necessary npm packages with `npm install`. 
 
-```bash
-npm install
+In the *root folder* you need to add a file called *config.json* which contains your Google API key. The key is necessary to parse the addresses of the measuring points to coordinates. The *config.json* should look like this:
 ```
+{
+    “API_KEY_GOOGLE”: “XXXXXXXXXXXXXXXXXXXX”
+}
+```
+
+Run the server with `npm start`.
