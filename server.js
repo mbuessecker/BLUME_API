@@ -9,70 +9,73 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const asyncMiddleware = fn =>
-    (req, res, next) => {
-        Promise.resolve(fn(req, res, next))
-            .catch(next);
-    };
+const asyncMiddleware = fn => (req, res, next) => {
+    Promise
+        .resolve(fn(req, res, next))
+        .catch(next);
+};
+
+async function handleScrapeMeasurements(types, response) {
+    await scraper.scrape(types)
+        .then(async dataArray => {
+            // Here we can access the scraped data from BLUME.
+            console.log(dataArray)
+            response.json(dataArray)
+            await Promise.resolve();
+        }, async err => {
+            console.log(err);
+            response.sendStatus(500);
+            await Promise.reject(err);
+        });
+}
+
+app.get('/api/v1/latestMeasurement_PM10', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["PM10"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_NO', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["NO"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_NO2', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["NO₂"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_NOX', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["NOx"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_O3', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["O₃"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_CO', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["CO"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_SO2', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["SO₂"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_CHB', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["CHB"], res).catch(() => {});
+}));
+
+app.get('/api/v1/latestMeasurement_CHT', asyncMiddleware(async (req, res, next) => {    
+    handleScrapeMeasurements(["CHT"], res).catch(() => {}); 
+}));
 
 app.get('/api/v1/latestMeasurement', asyncMiddleware(async (req, res, next) => {
-    var parameters = [];
-    if(req.query.type !== undefined) {
-         //DO SOMEHTING
-         parameters = req.query.type.split(',');
+    // Generic method takind url query parameters
+    var requestedTypes = [];
+    if (req.query.type !== undefined) {
+        requestedTypes = req.query.type.split(',');
     }
-
-    res.json(req.query.type);
-    await scraper.scrape(parameters).then(async data => {
-        // Here we can access the scraped data from BLUME.
-         console.log(data);
-        /* For every measuring point (Messstaion) there is a timestamp, the coordinated, and measurements. For the API we need to combine all the measurements for one measurement type (e.g. PM10) and format it so it looks like this: 
-        [
-            {
-                timestamp: ...,
-                latitude: ...,
-                longitude: ...,
-                measurement: ...(number)
-            },
-            {
-                timestamp: ...,
-                latitude: ...,
-                longitude: ...,
-                measurement: ...(number)
-            },
-            .
-            .
-            .
-        ]
-        I already added one endpoint above. Just add more endpoints for the other measurement types and send the corresponding data :)
-        */
-    });
+    
+    handleScrapeMeasurements(requestedTypes, res).catch(() => {});
 }));
 
 app.listen(port, asyncMiddleware(async (req, res) => {
-    //console.log(`Listening on port ${port}`);
-    await scraper.scrape([]).then(async data => {
-        // Here we can access the scraped data from BLUME.
-         //console.log(data);
-        /* For every measuring point (Messstaion) there is a timestamp, the coordinated, and measurements. For the API we need to combine all the measurements for one measurement type (e.g. PM10) and format it so it looks like this: 
-        [
-            {
-                timestamp: ...,
-                latitude: ...,
-                longitude: ...,
-                measurement: ...(number)
-            },
-            {
-                timestamp: ...,
-                latitude: ...,
-                longitude: ...,
-                measurement: ...(number)
-            },
-            .
-            .
-            .
-        ]
-        I already added one endpoint above. Just add more endpoints for the other measurement types and send the corresponding data :)
-        */
-    });
+    console.log(`Listening on port ${port}`);
+    handleScrapeMeasurements([], res).catch(() => {});
 }));
