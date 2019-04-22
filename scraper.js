@@ -3,6 +3,7 @@ const $ = require('cheerio');
 const axios = require('axios');
 const querystring = require('querystring');
 const config = require('./config.json');
+const moment = require('moment');
 
 const API_KEY_GOOGLE = config['API_KEY_GOOGLE'];
 
@@ -21,13 +22,16 @@ async function scrape(requestedMeasurementTypes) {
             }
 
             // Now we can get the measurements from the measuring points.            
-            await Promise.all(urlsMeasuringPoints.map(async measuringPointUrl => {
-                data.push(await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes));
-            }));
+            await Promise
+                    .all(urlsMeasuringPoints
+                    .map(async measuringPointUrl => {
+                        data.push(await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes));
+                    }));
+
             return data;
         })
         .catch((err) => {
-            console.log(err);
+            return [];
         });
 }
 
@@ -45,7 +49,10 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             var measurementValues = {};
 
             let timestamp = $(dateTableCell).children().first().text();
-            //timestamp = new Date(timestamp).toLocaleString();
+
+            let m = moment(timestamp, 'DD.MM.YYYY HH:mm', 'de');
+
+            timestamp = new Date(m.toISOString()).toLocaleString();
 
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
@@ -73,7 +80,7 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             return measurementValues;
         })
         .catch((err) => {
-            console.log(err);
+            return {};
         });
 }
 
