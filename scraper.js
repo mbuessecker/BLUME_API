@@ -39,7 +39,7 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
     return rp(measuringPointUrl)
         .then(async html => {
 
-            let needsAllMeasurements = requestedMeasurementTypes.length == 0;
+            //let needsAllMeasurements = requestedMeasurementTypes.length == 0;
             // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
             const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
@@ -61,18 +61,14 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             measurementValues["latitude"] = coordinates.lat;
             measurementValues["longitude"] = coordinates.lng;
 
-            requestedMeasurementTypes.forEach((i, element) => {
-                measurementValues[i] = null;
-            });
-
             $(dateTableCell).nextAll().each((i, element) => {
                 const measurement = $(element).contents().not($(element).children()).text().trim();
-                const measurementUnit = $(measurementTypesTableRow[i]).children().first().text();
-                let isRequestedMeasurementUnit = requestedMeasurementTypes.includes(measurementUnit);
+                const measurementType = $(measurementTypesTableRow[i]).children().first().text();
+                let isRequestedMeasurementUnit = requestedMeasurementTypes.includes(measurementType);
 
-                if ((needsAllMeasurements) || (isRequestedMeasurementUnit)) {
-                    if (measurementUnit !== '') {
-                        measurementValues[measurementUnit] = measurement;
+                if (isRequestedMeasurementUnit) {
+                    if (measurementType !== '') {
+                        measurementValues["measurement"] = measurement;
                     }
                 }
             });
