@@ -66,7 +66,7 @@ app.get('/api/v1/latestMeasurement_CHT', asyncMiddleware(async (req, res, next) 
 }));
 
 app.get('/api/v1/latestMeasurement', asyncMiddleware(async (req, res, next) => {
-    // Generic method takind url query parameters
+    // Generic method taking url query parameters
     var requestedTypes = [];
     if (req.query.type !== undefined) {
         requestedTypes = req.query.type.split(',');
