@@ -19,7 +19,6 @@ async function handleScrapeMeasurements(types, response) {
     await scraper.scrape(types)
         .then(async dataArray => {
             // Here we can access the scraped data from BLUME.
-            console.log(dataArray)
             response.json(dataArray)
             await Promise.resolve();
         }, async err => {
