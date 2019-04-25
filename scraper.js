@@ -39,7 +39,6 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
     return rp(measuringPointUrl)
         .then(async html => {
 
-            //let needsAllMeasurements = requestedMeasurementTypes.length == 0;
             // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
             const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
