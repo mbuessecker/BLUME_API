@@ -25,8 +25,13 @@ async function scrape(requestedMeasurementTypes) {
             await Promise
                     .all(urlsMeasuringPoints
                     .map(async measuringPointUrl => {
-                        data.push(await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes));
+                        let measurement = await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes);
+                        if (measurement !== null) {
+                            data.push(measurement);
+                        }
                     }));
+
+                
 
             return data;
         })
@@ -45,7 +50,7 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
 
-            var measurementValues = {};
+            const measurements = {};
 
             let timestamp = $(dateTableCell).children().first().text();
 
@@ -56,26 +61,30 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
 
-            measurementValues["timestamp"] = timestamp;
-            measurementValues["latitude"] = coordinates.lat;
-            measurementValues["longitude"] = coordinates.lng;
-
             $(dateTableCell).nextAll().each((i, element) => {
-                const measurement = $(element).contents().not($(element).children()).text().trim();
+                const measurementValue = $(element).contents().not($(element).children()).text().trim();
                 const measurementType = $(measurementTypesTableRow[i]).children().first().text();
-                let isRequestedMeasurementUnit = requestedMeasurementTypes.includes(measurementType);
-
-                if (isRequestedMeasurementUnit) {
+                let isRequestedMeasurementType = requestedMeasurementTypes.includes(measurementType);
+                
+                if (isRequestedMeasurementType) {
                     if (measurementType !== '') {
-                        measurementValues["measurement"] = measurement;
+                        measurements["timestamp"] = timestamp;
+                        measurements["latitude"] = coordinates.lat;
+                        measurements["longitude"] = coordinates.lng;
+                        measurements["value"] = measurementValue;
                     }
                 }
             });
 
-            return measurementValues;
+            if (measurements["value"] == null) {
+                return null;
+            }
+
+            return measurements;
         })
         .catch((err) => {
-            return {};
+            console.log(err);
+            return null;
         });
 }
 
