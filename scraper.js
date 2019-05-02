@@ -22,8 +22,8 @@ async function scrape(requestedMeasurementTypes) {
             }
 
             await Promise
-            .all(urlsMeasuringPoints
-                .map(async measuringPointUrl => {
+                .all(urlsMeasuringPoints
+                    .map(async measuringPointUrl => {
                         // Now we can get the measurements from the measuring points.            
                         let measurement = await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes);
                         if (measurement !== null) {
@@ -44,20 +44,19 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             const measurementTypesTableRow = $('thead', html).children().first().children();
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
-    
+
             let timestamp = $(dateTableCell).children().first().text();
             let m = moment(timestamp, 'DD.MM.YYYY HH:mm', 'de');
             timestamp = new Date(m.toISOString()).toLocaleString();
-            
+
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
-            
+
             const measurements = {};
             $(dateTableCell).nextAll().each((i, element) => {
                 const measurementValue = $(element).contents().not($(element).children()).text().trim();
-                const measurementType = $(measurementTypesTableRow[i]).children().first().text();
+                const measurementType = $(measurementTypesTableRow[i+1]).children().first().text();
                 let isRequestedMeasurementType = requestedMeasurementTypes.includes(measurementType);
-                
                 if (isRequestedMeasurementType) {
                     if (measurementType !== '') {
                         measurements['timestamp'] = timestamp;
@@ -71,7 +70,6 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             if (measurements['value'] == null) {
                 return null;
             }
-
             return measurements;
         })
         .catch((err) => {
