@@ -2,10 +2,10 @@ const rp = require('request-promise');
 const $ = require('cheerio');
 const axios = require('axios');
 const querystring = require('querystring');
-const config = require('./config.json');
+const config = require('./config');
 const moment = require('moment');
 
-const API_KEY_GOOGLE = config['API_KEY_GOOGLE'];
+const API_KEY_GOOGLE = config.get('API_KEY_GOOGLE');
 
 const baseUrl = 'https://luftdaten.berlin.de';
 
