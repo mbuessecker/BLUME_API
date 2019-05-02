@@ -3,12 +3,13 @@ const $ = require('cheerio');
 const axios = require('axios');
 const querystring = require('querystring');
 const config = require('./config.json');
+const moment = require('moment');
 
 const API_KEY_GOOGLE = config['API_KEY_GOOGLE'];
 
 const baseUrl = 'https://luftdaten.berlin.de';
 
-async function scrape() {
+async function scrape(requestedMeasurementTypes) {
     // First we have to get the URLs of the measuering points of BLUME.
     return rp(baseUrl + '/lqi')
         .then(async html => {
@@ -20,59 +21,62 @@ async function scrape() {
                 urlsMeasuringPoints.push($('a.lmn-button', html)[i].attribs.href);
             }
 
-            // Now we can get the measurements from the measuring points.
-            await Promise.all(urlsMeasuringPoints.map(async measuringPointUrl => {
-                data.push(await getLatestMeasurements(baseUrl + measuringPointUrl));
-            }));
+            await Promise
+            .all(urlsMeasuringPoints
+                .map(async measuringPointUrl => {
+                        // Now we can get the measurements from the measuring points.            
+                        let measurement = await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes);
+                        if (measurement !== null) {
+                            data.push(measurement);
+                        }
+                    }));
             return data;
         })
         .catch((err) => {
-            console.log(err);
+            return [];
         });
 }
 
-async function getLatestMeasurements(measuringPointUrl) {
+async function getLatestMeasurements(measuringPointUrl, requestedMeasurementTypes) {
     return rp(measuringPointUrl)
         .then(async html => {
             // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
-            const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
-
-            const measurementTypes = [];
-            for (let i = 1; i < numberOfMeasurementsTypes; i++) {
-                const currentTableCell = $(measurementTypesTableRow[i]);
-                measurementTypes.push($(currentTableCell).children().first().text());
-            }
-
-            const measurements = [];
-            $(dateTableCell).nextAll().each((i, element) => {
-                const measurementWithoutUnit = $(element).contents().not($(element).children()).text().trim();
-                measurements.push(measurementWithoutUnit);
-            });
-
+    
             let timestamp = $(dateTableCell).children().first().text();
-            timestamp = new Date(timestamp).toLocaleString();
-
+            let m = moment(timestamp, 'DD.MM.YYYY HH:mm', 'de');
+            timestamp = new Date(m.toISOString()).toLocaleString();
+            
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
-
-            const latestMeasurements = {
-                'timestamp': timestamp,
-                'latitude': coordinates.lat,
-                'longitude': coordinates.lng
-            }
-            measurementTypes.forEach((measurementType, i) => {
-                if (measurementType !== '') {
-                    latestMeasurements[measurementType] = measurements[i];
+            
+            const measurements = {};
+            $(dateTableCell).nextAll().each((i, element) => {
+                const measurementValue = $(element).contents().not($(element).children()).text().trim();
+                const measurementType = $(measurementTypesTableRow[i]).children().first().text();
+                let isRequestedMeasurementType = requestedMeasurementTypes.includes(measurementType);
+                
+                if (isRequestedMeasurementType) {
+                    if (measurementType !== '') {
+                        measurements['timestamp'] = timestamp;
+                        measurements['latitude'] = coordinates.lat;
+                        measurements['longitude'] = coordinates.lng;
+                        measurements['value'] = measurementValue;
+                    }
                 }
             });
 
-            return latestMeasurements;
+            if (measurements['value'] == null) {
+                return null;
+            }
+
+            return measurements;
         })
         .catch((err) => {
             console.log(err);
+            return null;
         });
 }
 
