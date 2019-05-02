@@ -21,18 +21,15 @@ async function scrape(requestedMeasurementTypes) {
                 urlsMeasuringPoints.push($('a.lmn-button', html)[i].attribs.href);
             }
 
-            // Now we can get the measurements from the measuring points.            
             await Promise
-                    .all(urlsMeasuringPoints
-                    .map(async measuringPointUrl => {
+            .all(urlsMeasuringPoints
+                .map(async measuringPointUrl => {
+                        // Now we can get the measurements from the measuring points.            
                         let measurement = await getLatestMeasurements(baseUrl + measuringPointUrl, requestedMeasurementTypes);
                         if (measurement !== null) {
                             data.push(measurement);
                         }
                     }));
-
-                
-
             return data;
         })
         .catch((err) => {
@@ -43,24 +40,19 @@ async function scrape(requestedMeasurementTypes) {
 async function getLatestMeasurements(measuringPointUrl, requestedMeasurementTypes) {
     return rp(measuringPointUrl)
         .then(async html => {
-
             // We need latitude, longitude, (height), timestamp, measurements and measurementTypes.
             const measurementTypesTableRow = $('thead', html).children().first().children();
-            const numberOfMeasurementsTypes = $(measurementTypesTableRow).length;
             const latestMeasurementTableRow = $('tbody', html).children().first();
             const dateTableCell = $(latestMeasurementTableRow).children().first();
-
-            const measurements = {};
-
+    
             let timestamp = $(dateTableCell).children().first().text();
-
             let m = moment(timestamp, 'DD.MM.YYYY HH:mm', 'de');
-
             timestamp = new Date(m.toISOString()).toLocaleString();
-
+            
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
-
+            
+            const measurements = {};
             $(dateTableCell).nextAll().each((i, element) => {
                 const measurementValue = $(element).contents().not($(element).children()).text().trim();
                 const measurementType = $(measurementTypesTableRow[i]).children().first().text();
@@ -68,15 +60,15 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
                 
                 if (isRequestedMeasurementType) {
                     if (measurementType !== '') {
-                        measurements["timestamp"] = timestamp;
-                        measurements["latitude"] = coordinates.lat;
-                        measurements["longitude"] = coordinates.lng;
-                        measurements["value"] = measurementValue;
+                        measurements['timestamp'] = timestamp;
+                        measurements['latitude'] = coordinates.lat;
+                        measurements['longitude'] = coordinates.lng;
+                        measurements['value'] = measurementValue;
                     }
                 }
             });
 
-            if (measurements["value"] == null) {
+            if (measurements['value'] == null) {
                 return null;
             }
 
