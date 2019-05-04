@@ -49,28 +49,31 @@ async function getLatestMeasurements(measuringPointUrl, requestedMeasurementType
             let m = moment(timestamp, 'DD.MM.YYYY HH:mm', 'de');
             timestamp = new Date(m.toISOString()).toLocaleString();
 
+            const name = $('dt:contains("Messstation:")', html).next().text();
+
             const address = $('dt:contains("Adresse:")', html).next().text();
             const coordinates = await getCoordinatesFromAddress(address);
 
-            const measurements = {};
+            const measurement = {};
             $(dateTableCell).nextAll().each((i, element) => {
                 const measurementValue = $(element).contents().not($(element).children()).text().trim();
                 const measurementType = $(measurementTypesTableRow[i+1]).children().first().text();
                 let isRequestedMeasurementType = requestedMeasurementTypes.includes(measurementType);
                 if (isRequestedMeasurementType) {
                     if (measurementType !== '') {
-                        measurements['timestamp'] = timestamp;
-                        measurements['latitude'] = coordinates.lat;
-                        measurements['longitude'] = coordinates.lng;
-                        measurements['value'] = measurementValue;
+                        measurement['timestamp'] = timestamp;
+                        measurement['measuringPoint'] = name;
+                        measurement['latitude'] = coordinates.lat;
+                        measurement['longitude'] = coordinates.lng;
+                        measurement['value'] = measurementValue;
                     }
                 }
             });
 
-            if (measurements['value'] == null) {
+            if (measurement['value'] == null) {
                 return null;
             }
-            return measurements;
+            return measurement;
         })
         .catch((err) => {
             console.log(err);
