@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 
 const scraper = require('./scraper');
 
+const mcache = require("memory-cache");
+
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -27,11 +29,32 @@ async function handleScrapeMeasurements(types, response) {
         });
 }
 
-app.get('/api/v1/latestMeasurement_PM10', asyncMiddleware(async (req, res, next) => {    
+let memCache = new mcache.Cache();
+let cacheMiddleware = (duration) => {
+    return (req, res, next) => {
+        let key =  '__express__' + req.originalUrl || req.url
+        let cacheContent = memCache.get(key);
+        if(cacheContent){
+            res.send( cacheContent );
+            //console.log (casheContent);
+            console.log(key);
+            return
+        }else{
+            res.sendResponse = res.send
+            res.send = (body) => {
+                memCache.put(key,body,duration*1000);
+                res.sendResponse(body)
+            }
+            next()
+        }
+    }
+}
+
+app.get('/api/v1/latestMeasurement_PM10', cacheMiddleware(30), asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['PM10'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_NO', asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_NO', cacheMiddleware(30), asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['NO'], res).catch(() => {});
 }));
 
