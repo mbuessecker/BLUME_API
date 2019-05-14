@@ -24,7 +24,6 @@ async function cacheUpdate(mesurementTypes) {
         .then(async dataArray => {
             let keyCache = '/api/v1/latestMeasurement_' + JSON.stringify(mesurementTypes).slice(1,-1);
             memCache.put(keyCache, dataArray, 15*60000);
-            console.log(keyCache);
             await Promise.resolve();
         }, async err => {
             console.log(err);
@@ -37,9 +36,7 @@ setTimeout(() => {
     let mesurementTypes = ['CHT', 'CHB', 'SO2', 'CO', 'O3', 'NOX', 'NO2', 'NO', 'PM10' ];
     mesurementTypes.forEach((type) => {
         cacheUpdate(type);
-    });
-    console.log(memCache.get('/api/v1/latestMeasurement_PM10'))
-}, 15*60000);
+})}, 15*60000);
 
 
 async function handleScrapeMeasurements(types, response) {
@@ -61,15 +58,12 @@ let cacheMiddleware = (duration) => {
         let cacheContent = memCache.get(key);
         if(cacheContent){
             res.send( cacheContent );
-            console.log("MemeCashe route");
-            console.log(key);
             return
         }else{
             res.sendResponse = res.send
             res.send = (body) => {
                 memCache.put(key,body,duration*60000);
                 res.sendResponse(body)
-                console.log("standard route");
             }
             next()
         }
