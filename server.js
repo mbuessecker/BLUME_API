@@ -32,11 +32,14 @@ async function cacheUpdate(mesurementTypes) {
         });
 }
 // casheSetTimeout the cashe every 15 minutes.
-setTimeout(() => {
+function cacheUpdateMesurements(){
     let mesurementTypes = ['CHT', 'CHB', 'SO2', 'CO', 'O3', 'NOX', 'NO2', 'NO', 'PM10' ];
     mesurementTypes.forEach((type) => {
         cacheUpdate(type);
-})}, 15*60000);
+    });
+}
+cacheUpdateMesurements();
+setInterval(cacheUpdateMesurements, 15*60000);
 
 
 async function handleScrapeMeasurements(types, response) {
