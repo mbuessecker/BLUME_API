@@ -11,9 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.18.0",
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
-    "express": "^4.16.4",
+    "express": "^4.17.1",
     "memory-cache": "^0.2.0",
     "moment": "^2.24.0",
     "nconf": "^0.10.0",
@@ -21,6 +21,6 @@
     "request-promise": "^4.2.4"
   },
   "devDependencies": {
-    "nodemon": "^1.18.11"
+    "nodemon": "^1.19.1"
   }
 }
