@@ -75,5 +75,4 @@ app.get('/api/v1/latestMeasurement', asyncMiddleware(async (req, res, next) => {
 
 app.listen(port, asyncMiddleware(async (req, res) => {
     console.log(`Listening on port ${port}`);
-    handleScrapeMeasurements([], res).catch(() => {});
 }));
