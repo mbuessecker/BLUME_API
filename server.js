@@ -3,8 +3,6 @@ const bodyParser = require('body-parser');
 
 const scraper = require('./scraper');
 
-const mcache = require("memory-cache");
-
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -16,31 +14,6 @@ const asyncMiddleware = fn => (req, res, next) => {
         .resolve(fn(req, res, next))
         .catch(next);
 };
-
-let memCache = new mcache.Cache();
-// cacheUpdate refreshes the cashe.
-async function cacheUpdate(mesurementTypes) {
-    await scraper.scrape(mesurementTypes)
-        .then(async dataArray => {
-            let keyCache = '/api/v1/latestMeasurement_' + JSON.stringify(mesurementTypes).slice(1,-1);
-            memCache.put(keyCache, dataArray, 15*60000);
-            await Promise.resolve();
-        }, async err => {
-            console.log(err);
-            response.sendStatus(500);
-            await Promise.reject(err);
-        });
-}
-// casheSetTimeout the cashe every 15 minutes.
-function cacheUpdateMesurements(){
-    let mesurementTypes = ['CHT', 'CHB', 'SO2', 'CO', 'O3', 'NOX', 'NO2', 'NO', 'PM10' ];
-    mesurementTypes.forEach((type) => {
-        cacheUpdate(type);
-    });
-}
-cacheUpdateMesurements();
-setInterval(cacheUpdateMesurements, 15*60000);
-
 
 async function handleScrapeMeasurements(types, response) {
     await scraper.scrape(types)
@@ -54,58 +27,39 @@ async function handleScrapeMeasurements(types, response) {
         });
 }
 
-// cacheMiddleware checks the cache and returns the value. Without matching key it just starts the scraper
-let cacheMiddleware = (duration) => {
-    return (req, res, next) => {
-        let key = req.originalUrl || req.url
-        let cacheContent = memCache.get(key);
-        if(cacheContent){
-            res.send( cacheContent );
-            return
-        }else{
-            res.sendResponse = res.send
-            res.send = (body) => {
-                memCache.put(key,body,duration*60000);
-                res.sendResponse(body)
-            }
-            next()
-        }
-    }
-}
-
-app.get('/api/v1/latestMeasurement_PM10', cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_PM10', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['PM10'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_NO', cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_NO', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['NO'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_NO2',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_NO2', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['NO₂'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_NOX',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_NOX', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['NOx'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_O3',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_O3', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['O₃'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_CO',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_CO', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['CO'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_SO2',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_SO2', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['SO₂'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_CHB',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_CHB', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['CHB'], res).catch(() => {});
 }));
 
-app.get('/api/v1/latestMeasurement_CHT',cacheMiddleware(15), asyncMiddleware(async (req, res, next) => {    
+app.get('/api/v1/latestMeasurement_CHT', asyncMiddleware(async (req, res, next) => {    
     handleScrapeMeasurements(['CHT'], res).catch(() => {}); 
 }));
 
